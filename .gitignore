@@ -1,10 +1,19 @@
-__pycache__
-convert_md_to_pdf
-eddytools.egg-info
-head.tex
-missfont.log
-run_test.sh
+.ipynb_checkpoints
 *.nc
-*.pickle
-*/dask-worker-space
-*/.ipynb_checkpoints
+*.npz
+*.png
+*.gif
+*.mp4
+
+# don't track executed notebooks
+./notebooks_executed/**
+
+# don't track container images
+*.sif
+*.pyc
+
+*/.ipynb_notebooks
+*/slurm*.out
+slurm*.out
+notebooks/dask-worker-space/
+*/*/.ipynb_notebooks
