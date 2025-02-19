@@ -1,4 +1,4 @@
-name: eddytools
+name: py3-eddytools
 channels:
   - conda-forge
   - defaults
