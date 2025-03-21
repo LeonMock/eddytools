@@ -7,11 +7,10 @@ set -e
 #SBATCH --time=08:00:00
 #SBATCH --partition=base
 #SBATCH --mail-user=lmock@geomar.de
-#SBATCH --mail-type=FAIL
+#SBATCH --mail-type=ALL
 
-# Load required modules
-module load gcc12-env/12.3.0 
-module load singularity/3.11.5
+# Activate Conda environment
+conda activate py3-eddytools
 
 # Change to working directory
 cd /gxfs_work/geomar/smomw523/eddytools/
@@ -30,8 +29,8 @@ experiment_name='INALT60.L120-KRS0020'
 data_resolution='1d'
 Npix_min=2025 #45*45
 Npix_max=15000 #500*6*5
-OW_thr_factor=-0.2
-sigma=1
+OW_thr_factor=-0.3
+sigma=9
 wx=1500 #100*15
 wy=1500 #100*15
 
@@ -46,6 +45,7 @@ mkdir -p workflow_executed/${experiment_name}/smoothed/${sigma}/${data_resolutio
 
 # List of notebooks to run
 notebooks=(
+    "workflow/2a-smoothing.ipynb"
     "workflow/4-OW.ipynb"
     "workflow/5a-detection.ipynb"
     "workflow/5b-prepare-eddy-masks.ipynb"
@@ -58,16 +58,27 @@ tracking_notebooks=(
 )
 
 # Iterate over notebooks and periods, running them sequentially
-for notebook in "${notebooks[@]}"; do
-    output_name=$(basename "$notebook" .ipynb)
-    for period in "${periods[@]}"; do
-        datestart=$(echo $period | cut -d ' ' -f 1)
-        dateend=$(echo $period | cut -d ' ' -f 2)
-        output_path="workflow_executed/${experiment_name}/smoothed/${sigma}/${data_resolution}/${output_name}_${datestart}_${dateend}.ipynb"
+declare -A pids
+for period in "${periods[@]}"; do
+    datestart=$(echo $period | cut -d ' ' -f 1)
+    dateend=$(echo $period | cut -d ' ' -f 2)
+    (
+        for notebook in "${notebooks[@]}"; do
+            output_name=$(basename "$notebook" .ipynb)
+            output_path="workflow_executed/${experiment_name}/smoothed/${sigma}/${data_resolution}/${output_name}_${datestart}_${dateend}.ipynb"
+            srun --ntasks=1 --exclusive papermill --cwd notebooks "$notebook" "$output_path" \
+                -p datestart $datestart -p dateend $dateend \
+                -p Npix_min $Npix_min -p Npix_max $Npix_max \
+                -p OW_thr_factor $OW_thr_factor -p sigma $sigma -p wx $wx -p wy $wy \
+                -k python
+        done
+    ) &
+    pids[$period]=$!
+done
 
-         srun --ntasks=1 --exclusive singularity run -B /sfs -B /gxfs_work -B $PWD:/work --pwd /work parcels-container_2022.07.14-801fbe4.sif bash -c \
-            ". /opt/conda/etc/profile.d/conda.sh && conda activate py3_eddytools && papermill --cwd notebooks \"$notebook\" \"$output_path\" -p datestart $datestart -p dateend $dateend -p Npix_min $Npix_min -p Npix_max $Npix_max -p OW_thr_factor $OW_thr_factor -p sigma $sigma -p wx $wx -p wy $wy -k python"
-    done
+# Wait for all periods to finish
+for pid in "${pids[@]}"; do
+    wait $pid
 done
 
 # Run tracking notebooks only once at the end
@@ -75,8 +86,12 @@ for notebook in "${tracking_notebooks[@]}"; do
     output_name=$(basename "$notebook" .ipynb)
     output_path="workflow_executed/${experiment_name}/smoothed/${sigma}/${data_resolution}/${output_name}_${tracking_start}_${tracking_end}.ipynb"
 
-     srun --ntasks=1 --exclusive singularity run -B /sfs -B /gxfs_work -B $PWD:/work --pwd /work parcels-container_2022.07.14-801fbe4.sif bash -c \
-        ". /opt/conda/etc/profile.d/conda.sh && conda activate py3_eddytools && papermill --cwd notebooks \"$notebook\" \"$output_path\" -p tracking_start $tracking_start -p tracking_end $tracking_end -p Npix_min $Npix_min -p Npix_max $Npix_max -p OW_thr_factor $OW_thr_factor -p sigma $sigma -p wx $wx -p wy $wy -p minimum_duration $minimum_duration -p first_or_last_crossing $first_or_last_crossing -k python"
+     srun --ntasks=1 --exclusive papermill --cwd notebooks "$notebook" "$output_path" \
+        -p tracking_start $tracking_start -p tracking_end $tracking_end \
+        -p Npix_min $Npix_min -p Npix_max $Npix_max \
+        -p OW_thr_factor $OW_thr_factor -p sigma $sigma -p wx $wx -p wy $wy \
+        -p minimum_duration $minimum_duration -p first_or_last_crossing $first_or_last_crossing \
+        -k python
 done
 
 # Print resource infos
