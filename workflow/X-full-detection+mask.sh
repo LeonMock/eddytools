@@ -10,6 +10,8 @@ set -e
 #SBATCH --mail-type=ALL
 
 # Activate Conda environment
+export PATH=/gxfs_work/geomar/smomw523/miniconda3/bin:$PATH
+source /gxfs_work/geomar/smomw523/miniconda3/etc/profile.d/conda.sh
 conda activate py3-eddytools
 
 # Change to working directory
@@ -66,7 +68,7 @@ for period in "${periods[@]}"; do
         for notebook in "${notebooks[@]}"; do
             output_name=$(basename "$notebook" .ipynb)
             output_path="workflow_executed/${experiment_name}/smoothed/${sigma}/${data_resolution}/${output_name}_${datestart}_${dateend}.ipynb"
-            srun --ntasks=1 --exclusive papermill --cwd notebooks "$notebook" "$output_path" \
+            srun --ntasks=1 --exclusive papermill "$notebook" "$output_path" \
                 -p datestart $datestart -p dateend $dateend \
                 -p Npix_min $Npix_min -p Npix_max $Npix_max \
                 -p OW_thr_factor $OW_thr_factor -p sigma $sigma -p wx $wx -p wy $wy \
@@ -86,7 +88,7 @@ for notebook in "${tracking_notebooks[@]}"; do
     output_name=$(basename "$notebook" .ipynb)
     output_path="workflow_executed/${experiment_name}/smoothed/${sigma}/${data_resolution}/${output_name}_${tracking_start}_${tracking_end}.ipynb"
 
-     srun --ntasks=1 --exclusive papermill --cwd notebooks "$notebook" "$output_path" \
+     srun --ntasks=1 --exclusive papermill "$notebook" "$output_path" \
         -p tracking_start $tracking_start -p tracking_end $tracking_end \
         -p Npix_min $Npix_min -p Npix_max $Npix_max \
         -p OW_thr_factor $OW_thr_factor -p sigma $sigma -p wx $wx -p wy $wy \

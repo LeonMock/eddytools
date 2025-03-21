@@ -7,6 +7,8 @@
 
 # don't track executed notebooks
 ./notebooks_executed/**
+./workflow_executed/**
+
 
 # don't track container images
 *.sif
