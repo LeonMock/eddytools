@@ -1,9 +1,10 @@
 #!/bin/bash
-set -e
 #SBATCH --job-name=detection
+#SBATCH --output=detection_%j.out
+#SBATCH --error=detection_%j.err
 #SBATCH --ntasks=13
 #SBATCH --cpus-per-task=2
-#SBATCH --mem-per-cpu=24G
+#SBATCH --mem-per-cpu=64G
 #SBATCH --time=08:00:00
 #SBATCH --partition=base
 #SBATCH --mail-user=lmock@geomar.de
@@ -36,9 +37,13 @@ sigma=9
 wx=1500 #100*15
 wy=1500 #100*15
 
+set -e
+
 # Tracking parameters
 tracking_start=$(echo ${periods[0]} | cut -d ' ' -f 1)
 tracking_end=$(echo ${periods[-1]} | cut -d ' ' -f 2)
+tracking_start_nodash=$(echo $tracking_start | tr -d '-')
+tracking_end_nodash=$(echo $tracking_end | tr -d '-')
 minimum_duration=5
 first_or_last_crossing='first'
 
@@ -47,8 +52,8 @@ mkdir -p workflow_executed/${experiment_name}/smoothed/${sigma}/${data_resolutio
 
 # List of notebooks to run
 notebooks=(
-    "workflow/2a-smoothing.ipynb"
-    "workflow/4-OW.ipynb"
+    #"workflow/2a-smoothing.ipynb"
+    #"workflow/4-OW.ipynb"
     "workflow/5a-detection.ipynb"
     "workflow/5b-prepare-eddy-masks.ipynb"
     "workflow/5c-detection-visualisation.ipynb"
@@ -59,15 +64,20 @@ tracking_notebooks=(
     "workflow/6b-crossing_Good-Hope_section.ipynb"
 )
 
-# Iterate over notebooks and periods, running them sequentially
+# Iterate over notebooks and periods
 declare -A pids
-for period in "${periods[@]}"; do
+for i in "${!periods[@]}"; do
+    period="${periods[$i]}"
+    (
     datestart=$(echo $period | cut -d ' ' -f 1)
     dateend=$(echo $period | cut -d ' ' -f 2)
-    (
+    datestart_nodash=$(echo $datestart | tr -d '-')
+    dateend_nodash=$(echo $dateend | tr -d '-')
         for notebook in "${notebooks[@]}"; do
             output_name=$(basename "$notebook" .ipynb)
-            output_path="workflow_executed/${experiment_name}/smoothed/${sigma}/${data_resolution}/${output_name}_${datestart}_${dateend}.ipynb"
+            notebook_folder="workflow_executed/${experiment_name}/smoothed/${sigma}/${data_resolution}/$(echo $output_name | cut -d '-' -f 1)"
+            mkdir -p "$notebook_folder"
+            output_path="$notebook_folder/${output_name}_${datestart_nodash}-${dateend_nodash}.ipynb"
             srun --ntasks=1 --exclusive papermill "$notebook" "$output_path" \
                 -p datestart $datestart -p dateend $dateend \
                 -p Npix_min $Npix_min -p Npix_max $Npix_max \
@@ -75,7 +85,7 @@ for period in "${periods[@]}"; do
                 -k python
         done
     ) &
-    pids[$period]=$!
+    pids[$i]=$!
 done
 
 # Wait for all periods to finish
@@ -86,9 +96,10 @@ done
 # Run tracking notebooks only once at the end
 for notebook in "${tracking_notebooks[@]}"; do
     output_name=$(basename "$notebook" .ipynb)
-    output_path="workflow_executed/${experiment_name}/smoothed/${sigma}/${data_resolution}/${output_name}_${tracking_start}_${tracking_end}.ipynb"
-
-     srun --ntasks=1 --exclusive papermill "$notebook" "$output_path" \
+    notebook_folder="workflow_executed/${experiment_name}/smoothed/${sigma}/${data_resolution}/$(echo $output_name | cut -d '-' -f 1)"
+    mkdir -p "$notebook_folder"
+    output_path="$notebook_folder/${output_name}_${tracking_start_nodash}-${tracking_end_nodash}.ipynb"
+    srun --ntasks=1 --exclusive papermill "$notebook" "$output_path" \
         -p tracking_start $tracking_start -p tracking_end $tracking_end \
         -p Npix_min $Npix_min -p Npix_max $Npix_max \
         -p OW_thr_factor $OW_thr_factor -p sigma $sigma -p wx $wx -p wy $wy \
