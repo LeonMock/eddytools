@@ -6,16 +6,14 @@
 *.mp4
 
 # don't track executed notebooks
-./notebooks_executed/**
 ./workflow_executed/**
-
 
 # don't track container images
 *.sif
 *.pyc
 
 */.ipynb_notebooks
-*/slurm*.out
-slurm*.out
+*.out
+*.err
 notebooks/dask-worker-space/
 */*/.ipynb_notebooks
