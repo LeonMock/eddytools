@@ -2,7 +2,7 @@
 #SBATCH --job-name=detection
 #SBATCH --output=detection_%j.out
 #SBATCH --error=detection_%j.err
-#SBATCH --ntasks=13
+#SBATCH --ntasks=1
 #SBATCH --cpus-per-task=2
 #SBATCH --mem-per-cpu=64G
 #SBATCH --time=08:00:00
@@ -54,8 +54,8 @@ mkdir -p workflow_executed/${experiment_name}/smoothed/${sigma}/${data_resolutio
 notebooks=(
     #"workflow/2a-smoothing.ipynb"
     #"workflow/4-OW.ipynb"
-    "workflow/5a-detection.ipynb"
-    "workflow/5b-prepare-eddy-masks.ipynb"
+    #"workflow/5a-detection.ipynb"
+    #"workflow/5b-prepare-eddy-masks.ipynb"
     "workflow/5c-detection-visualisation.ipynb"
     "workflow/5d-depth-sections.ipynb"
 )
