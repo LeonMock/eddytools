@@ -6,7 +6,8 @@
 *.mp4
 
 # don't track executed notebooks
-./workflow_executed/**
+workflow_executed/**
+results/**
 
 # don't track container images
 *.sif
