@@ -18,24 +18,36 @@ conda activate py3-eddytools
 # Change to working directory
 cd /gxfs_work/geomar/smomw523/eddytools/
 
-# Define periods
-periods=(
+# Detection parameters
+experiment_name='INALT20r.L120-KRS006' #'INALT60.L120-KRS0020'
+data_resolution='1d'
+OW_thr_factor=-0.3
+
+if [[ "$experiment_name" == INALT60* ]]; then
+    Npix_min=2025 #= 45*45
+    Npix_max=15000 #= 500*6*5
+    sigma=9
+    wx=1500 #100*15
+    wy=1500
+    periods=(
     "2012-01-01 2012-01-25" "2012-01-26 2012-02-19" "2012-02-20 2012-03-15"
     "2012-03-16 2012-04-09" "2012-04-10 2012-05-04" "2012-05-05 2012-05-29"
     "2012-05-30 2012-06-28" "2012-06-29 2012-07-28" "2012-07-29 2012-08-27"
     "2012-08-28 2012-09-26" "2012-09-27 2012-10-26" "2012-10-27 2012-11-20"
-    "2012-11-21 2012-12-15" 
-)
-
-# Detection parameters
-experiment_name='INALT60.L120-KRS0020'
-data_resolution='1d'
-Npix_min=2025 #45*45
-Npix_max=15000 #500*6*5
-OW_thr_factor=-0.3
-sigma=9
-wx=1500 #100*15
-wy=1500 #100*15
+    "2012-11-21 2012-12-15" #"2012-12-16 2012-12-31"
+    )
+elif [[ "$experiment_name" == INALT20* ]]; then
+    Npix_min=225 #= 15*15
+    Npix_max=2000 #= 500*2*2 
+    sigma=3
+    wx=500 #= 100*5
+    wy=500
+    periods=(
+    "2012-01-01 2012-02-19" "2012-02-20 2012-04-04" "2012-04-05 2012-05-19"
+    "2012-05-20 2012-07-03" "2012-07-04 2012-08-17" "2012-08-18 2012-10-01"
+    "2012-10-02 2012-11-15" "2012-11-16 2012-12-31"
+    )
+fi
 
 set -e
 
@@ -52,10 +64,10 @@ mkdir -p workflow_executed/${experiment_name}/smoothed/${sigma}/${data_resolutio
 
 # List of notebooks to run
 notebooks=(
-    #"workflow/2a-smoothing.ipynb"
-    #"workflow/4-OW.ipynb"
-    #"workflow/5a-detection.ipynb"
-    #"workflow/5b-prepare-eddy-masks.ipynb"
+    "workflow/2a-smoothing.ipynb"
+    "workflow/4-OW.ipynb"
+    "workflow/5a-detection.ipynb"
+    "workflow/5b-prepare-eddy-masks.ipynb"
     "workflow/5c-detection-visualisation.ipynb"
     "workflow/5d-depth-sections.ipynb"
 )
