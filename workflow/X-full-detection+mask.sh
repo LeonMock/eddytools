@@ -2,9 +2,9 @@
 #SBATCH --job-name=detection
 #SBATCH --output=detection_%j.out
 #SBATCH --error=detection_%j.err
-#SBATCH --ntasks=1
+#SBATCH --ntasks=8
 #SBATCH --cpus-per-task=2
-#SBATCH --mem-per-cpu=64G
+#SBATCH --mem-per-cpu=32G
 #SBATCH --time=08:00:00
 #SBATCH --partition=base
 #SBATCH --mail-user=lmock@geomar.de
@@ -64,7 +64,7 @@ mkdir -p workflow_executed/${experiment_name}/smoothed/${sigma}/${data_resolutio
 
 # List of notebooks to run
 notebooks=(
-    "workflow/2a-smoothing.ipynb"
+    #"workflow/2a-smoothing.ipynb"
     "workflow/4-OW.ipynb"
     "workflow/5a-detection.ipynb"
     "workflow/5b-prepare-eddy-masks.ipynb"
@@ -91,6 +91,7 @@ for i in "${!periods[@]}"; do
             mkdir -p "$notebook_folder"
             output_path="$notebook_folder/${output_name}_${datestart_nodash}-${dateend_nodash}.ipynb"
             srun --ntasks=1 --exclusive papermill "$notebook" "$output_path" \
+                -p experiment_name $experiment_name -p data_resolution $data_resolution \
                 -p datestart $datestart -p dateend $dateend \
                 -p Npix_min $Npix_min -p Npix_max $Npix_max \
                 -p OW_thr_factor $OW_thr_factor -p sigma $sigma -p wx $wx -p wy $wy \
@@ -112,6 +113,7 @@ for notebook in "${tracking_notebooks[@]}"; do
     mkdir -p "$notebook_folder"
     output_path="$notebook_folder/${output_name}_${tracking_start_nodash}-${tracking_end_nodash}.ipynb"
     srun --ntasks=1 --exclusive papermill "$notebook" "$output_path" \
+        -p experiment_name $experiment_name -p data_resolution $data_resolution \
         -p tracking_start $tracking_start -p tracking_end $tracking_end \
         -p Npix_min $Npix_min -p Npix_max $Npix_max \
         -p OW_thr_factor $OW_thr_factor -p sigma $sigma -p wx $wx -p wy $wy \
