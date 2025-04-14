@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=detection
-#SBATCH --ntasks=8
+#SBATCH --ntasks=14
 #SBATCH --cpus-per-task=2
 #SBATCH --mem-per-cpu=64G
 #SBATCH --time=24:00:00
@@ -17,7 +17,7 @@ conda activate py3-eddytools
 cd /gxfs_work/geomar/smomw523/eddytools/
 
 # Detection parameters
-experiment_name='INALT20r.L120-KRS006' #'INALT60.L120-KRS0020'
+experiment_name='INALT60.L120-KRS0020' #'INALT20r.L120-KRS006'
 data_resolution='1d'
 OW_thr_factor=-0.3
 
@@ -65,7 +65,7 @@ notebooks=(
     #"workflow/2a-smoothing.ipynb"
     #"workflow/4-OW.ipynb"
     #"workflow/5a-detection.ipynb"
-    #"workflow/5b-prepare-eddy-masks.ipynb"
+    "workflow/5b-prepare-eddy-masks.ipynb"
     "workflow/5c-detection-visualisation.ipynb"
     "workflow/5d-depth-sections.ipynb"
 )
